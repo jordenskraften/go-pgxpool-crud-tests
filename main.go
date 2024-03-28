@@ -5,8 +5,10 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"log"
+	"log/slog"
+	"pxgpool-crud-tests/internal/logger"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -14,49 +16,77 @@ import (
 )
 
 func main() {
-	log.Println("app is started")
+	logger := logger.NewLogger()
+	logger.Info("app is started")
 
 	// Create database connection
-	connPool, err := pgxpool.NewWithConfig(context.Background(), Config())
+	connPool, err := pgxpool.NewWithConfig(context.Background(), ConfigDB(logger))
 	if err != nil {
-		log.Fatal("Error while creating connection to the database!!")
+		logger.Error(err.Error())
 	}
 
 	connection, err := connPool.Acquire(context.Background())
 	if err != nil {
-		log.Fatal("Error while acquiring connection from the database pool!!")
+		logger.Error(err.Error())
 	}
 	defer connection.Release()
 
 	err = connection.Ping(context.Background())
 	if err != nil {
-		log.Fatal("Could not ping database")
+		logger.Error(err.Error())
 	}
 
-	fmt.Println("Connected to the database!!")
+	logger.Info("connected to database")
 
 	// Database queries
-	InsertQuery(connPool)
-	time.Sleep(time.Second)
-	InsertQuery(connPool)
-	InsertQuery(connPool)
+	wg := &sync.WaitGroup{}
+	counter := 100000
+	//1 mln parallel insert queries
 
+	logger.Info("starting inserting performing tests")
+	for i := 0; i < counter; i++ {
+		wg.Add(1)
+		go InsertQuery(connPool, logger, wg)
+		/*
+			SELECT
+				(SELECT COUNT(*) FROM Question) AS total_records,
+				answer_text
+			FROM
+			Question
+			LIMIT 10;
+		*/
+	}
+	wg.Wait()
+	time.Sleep(2 * time.Second)
+	logger.Info("inserting tests is over")
+
+	time.Sleep(10 * time.Second)
 	defer connPool.Close()
-
+	//это будет долго
+	//крч пул подключений дергается и паралельно записи идут
+	//даже на такой нагрузке не падает
+	//ладно миллион не буду ждать, останавливаю
 }
-func InsertQuery(p *pgxpool.Pool) {
+func InsertQuery(p *pgxpool.Pool, logger *slog.Logger, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	title := RandomCryptoString(10, logger)
+	question := RandomCryptoString(20, logger)
+	//trying to SQL INJECT
+	anwser := "Delete * from Question where question_title != " + RandomCryptoString(80, logger)
 	_, err := p.Exec(context.Background(),
 		"insert into Question(question_title, question_text, answer_text) values($1, $2, $3)",
-		RandomCryptoString(10), RandomCryptoString(20), RandomCryptoString(80))
+		title, question, anwser)
 	if err != nil {
-		log.Fatal(err.Error())
+		logger.Error(err.Error())
 	}
 }
 
-func RandomCryptoString(length int) string {
+func RandomCryptoString(length int, logger *slog.Logger) string {
 	b := make([]byte, length)
 	_, err := rand.Read(b)
 	if err != nil {
+		logger.Error(err.Error())
 		return "" // В случае ошибки возвращаем её
 	}
 
@@ -64,7 +94,7 @@ func RandomCryptoString(length int) string {
 	return base64.URLEncoding.EncodeToString(b)
 }
 
-func Config() *pgxpool.Config {
+func ConfigDB(logger *slog.Logger) *pgxpool.Config {
 	const defaultMaxConns = int32(4)
 	const defaultMinConns = int32(0)
 	const defaultMaxConnLifetime = time.Hour
@@ -83,7 +113,7 @@ func Config() *pgxpool.Config {
 
 	dbConfig, err := pgxpool.ParseConfig(dbAddress)
 	if err != nil {
-		log.Fatal("Failed to create a config, error: ", err)
+		logger.Error(err.Error())
 	}
 
 	dbConfig.MaxConns = defaultMaxConns
@@ -94,17 +124,18 @@ func Config() *pgxpool.Config {
 	dbConfig.ConnConfig.ConnectTimeout = defaultConnectTimeout
 
 	dbConfig.BeforeAcquire = func(ctx context.Context, c *pgx.Conn) bool {
-		log.Println("Before acquiring the connection pool to the database!!")
+		logger.Info("Before acquiring the connection pool to the database!!")
+
 		return true
 	}
 
 	dbConfig.AfterRelease = func(c *pgx.Conn) bool {
-		log.Println("After releasing the connection pool to the database!!")
+		logger.Info("After releasing the connection pool to the database!!")
 		return true
 	}
 
 	dbConfig.BeforeClose = func(c *pgx.Conn) {
-		log.Println("Closed the connection pool to the database!!")
+		logger.Info("Closed the connection pool to the database!!")
 	}
 
 	return dbConfig
