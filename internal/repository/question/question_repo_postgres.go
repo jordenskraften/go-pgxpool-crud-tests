@@ -2,7 +2,6 @@ package question
 
 import (
 	"context"
-	"log/slog"
 	database "pxgpool-crud-tests/internal/db"
 	"pxgpool-crud-tests/internal/model"
 
@@ -10,14 +9,12 @@ import (
 )
 
 type QuestionRepositoryPostgres struct {
-	logger *slog.Logger
-	db     *database.DB
+	db *database.DB
 }
 
-func NewQuestionRepositoryPostgres(db *database.DB, logger *slog.Logger) *QuestionRepositoryPostgres {
+func NewQuestionRepositoryPostgres(db *database.DB) *QuestionRepositoryPostgres {
 	return &QuestionRepositoryPostgres{
-		db:     db,
-		logger: logger,
+		db: db,
 	}
 }
 
@@ -32,7 +29,6 @@ func (ex *QuestionRepositoryPostgres) GetRandomQuestion() (*model.Question, erro
 		ToSql()
 
 	if err != nil {
-		ex.logger.Error("Failed to build query: ", err)
 		return nil, err
 	}
 
@@ -47,10 +43,7 @@ func (ex *QuestionRepositoryPostgres) GetRandomQuestion() (*model.Question, erro
 		&question.Answer_text,
 	)
 
-	ex.logger.Info("Fetched question: %+v\n", question)
-
 	if err != nil {
-		ex.logger.Error("Failed to fetch random question: ", err)
 		return nil, err
 	}
 

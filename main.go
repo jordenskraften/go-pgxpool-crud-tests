@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	database "pxgpool-crud-tests/internal/db"
 	"pxgpool-crud-tests/internal/logger"
-	"pxgpool-crud-tests/internal/repository"
-	"pxgpool-crud-tests/internal/usecase"
+	questrepo "pxgpool-crud-tests/internal/repository/question"
+	questusecase "pxgpool-crud-tests/internal/usecase/question"
 	"syscall"
 )
 
@@ -25,12 +25,12 @@ func main() {
 		log.Fatal("Failed to initialize database: ", err)
 	}
 	defer db.Pool.Close()
-	repo := repository.NewRepositoryPostgres(logger, db)
-	exampleService := usecase.NewExampleService(logger, repo)
+	questionRepo := questrepo.NewQuestionRepositoryPostgres(db)
+	questionService := questusecase.NewQuestionService(questionRepo)
 
 	logger.Info("starting 10 get 10 random questions")
 	for i := 0; i < 10; i++ {
-		quest, err := exampleService.GetRandomQuestion()
+		quest, err := questionService.GetRandomQuestion()
 		if err != nil {
 			logger.Error("failed while execution get random question service", err)
 		}
