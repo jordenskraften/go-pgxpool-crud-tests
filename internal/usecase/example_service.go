@@ -22,7 +22,7 @@ func NewExampleService(logger *slog.Logger, repo *repository.Repository) *Exampl
 
 func (es *ExampleService) GetRandomQuestion() (*model.Question, error) {
 	// Вызываем метод репозитория для получения случайного вопроса
-	quest, err := es.repo.QuestionRepo.GetRandomQuestion()
+	quest, err := es.repo.QuestionRepository.GetRandomQuestion()
 	if err != nil {
 		// Обработка ошибки здесь
 		es.logger.Error("Failed to get random question:", err)

@@ -7,20 +7,20 @@ import (
 	"pxgpool-crud-tests/internal/repository/question"
 )
 
-type ExampleRepository interface {
+type QuestionRepository interface {
 	GetRandomQuestion() (*model.Question, error)
 }
 
 type Repository struct {
-	logger       *slog.Logger
-	db           *database.DB
-	QuestionRepo *question.QuestionRepositoryPostgres
+	logger *slog.Logger
+	db     *database.DB
+	QuestionRepository
 }
 
 func NewRepositoryPostgres(logger *slog.Logger, db *database.DB) *Repository {
 	return &Repository{
-		logger:       logger,
-		db:           db,
-		QuestionRepo: question.NewQuestionRepositoryPostgres(db, logger),
+		logger:             logger,
+		db:                 db,
+		QuestionRepository: question.NewQuestionRepositoryPostgres(db, logger),
 	}
 }
