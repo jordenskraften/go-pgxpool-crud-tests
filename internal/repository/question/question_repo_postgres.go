@@ -1,4 +1,4 @@
-package example
+package question
 
 import (
 	"context"
@@ -9,19 +9,19 @@ import (
 	"github.com/Masterminds/squirrel"
 )
 
-type ExampleRepositoryPostgres struct {
+type QuestionRepositoryPostgres struct {
 	logger *slog.Logger
 	db     *database.DB
 }
 
-func NewExampleRepositoryPostgres(db *database.DB, logger *slog.Logger) *ExampleRepositoryPostgres {
-	return &ExampleRepositoryPostgres{
+func NewQuestionRepositoryPostgres(db *database.DB, logger *slog.Logger) *QuestionRepositoryPostgres {
+	return &QuestionRepositoryPostgres{
 		db:     db,
 		logger: logger,
 	}
 }
 
-func (ex *ExampleRepositoryPostgres) GetRandomQuestion() (*model.Question, error) {
+func (ex *QuestionRepositoryPostgres) GetRandomQuestion() (*model.Question, error) {
 	// Используем Squirrel для построения запроса
 	psql := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 	query, args, err := psql.
