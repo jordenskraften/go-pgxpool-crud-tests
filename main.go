@@ -4,18 +4,22 @@ import (
 	"context"
 	"log"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	database "pxgpool-crud-tests/internal/db"
 	"pxgpool-crud-tests/internal/logger"
-	questrepo "pxgpool-crud-tests/internal/repository/question"
-	questusecase "pxgpool-crud-tests/internal/usecase/question"
+	repoQuestion "pxgpool-crud-tests/internal/repository/question"
+	"pxgpool-crud-tests/internal/server"
+	"pxgpool-crud-tests/internal/server/handlers"
+	usecaseQuestion "pxgpool-crud-tests/internal/usecase/question"
 	"syscall"
 )
 
 func main() {
 	logger := logger.NewLogger()
 	logger.Info("app is started")
+	logger.Info("httpmuxgo121 must be = 0 for new 1.22 http mux:", slog.String("GODEBUG ", os.Getenv("GODEBUG")))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -25,17 +29,20 @@ func main() {
 		log.Fatal("Failed to initialize database: ", err)
 	}
 	defer db.Pool.Close()
-	questionRepo := questrepo.NewQuestionRepositoryPostgres(db)
-	questionService := questusecase.NewQuestionService(questionRepo)
 
-	logger.Info("starting 10 get 10 random questions")
-	for i := 0; i < 10; i++ {
-		quest, err := questionService.GetRandomQuestion()
-		if err != nil {
-			logger.Error("failed while execution get random question service", err)
-		}
-		logger.Info("get random question query is good, value:", quest.Answer_text)
-	}
+	httpServer := server.NewServer(logger)
+
+	questionRepo := repoQuestion.NewQuestionRepositoryPostgres(db)
+	questionUsecase := usecaseQuestion.NewQuestionService(questionRepo)
+	questionHandler := handlers.NewGetQuestionHandler(httpServer.Router, questionUsecase, logger)
+
+	httpServer.Router.HandleFunc("/question", questionHandler.ServeHTTP)
+	httpServer.Router.HandleFunc("GET /quest/", questionHandler.ServeHTTP)
+	httpServer.Router.HandleFunc("GET /path/", func(w http.ResponseWriter, r *http.Request) {
+		logger.Info("got path\n")
+	})
+
+	go httpServer.Server.ListenAndServe()
 	// Инициализация грациозного завершения работы
 	gracefulShutdown(logger)
 }
