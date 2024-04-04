@@ -86,3 +86,27 @@ func (ex *QuestionRepositoryPostgres) GetQuestionById(id int) (*model.Question, 
 
 	return &question, nil
 }
+
+func (ex *QuestionRepositoryPostgres) AddQuestion(question *model.QuestionDTO) (int, error) {
+	// Используем Squirrel для построения запроса
+	psql := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
+	query, args, err := psql.
+		Insert("Question").
+		Columns("topic_id", "question_title", "question_text", "answer_text").
+		Values(question.TopicID, question.QuestionTitle, question.QuestionText, question.AnswerText).
+		ToSql()
+
+	if err != nil {
+		return 0, err
+	}
+
+	// Выполнение запроса через pgx.Pool
+	var id int
+	err = ex.db.Pool.QueryRow(context.Background(), query+" RETURNING id", args...).Scan(&id)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}

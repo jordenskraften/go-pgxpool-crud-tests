@@ -7,6 +7,7 @@ import (
 type QuestionRepository interface {
 	GetRandomQuestion() (*model.Question, error)
 	GetQuestionById(id int) (*model.Question, error)
+	AddQuestion(*model.QuestionDTO) (int, error)
 }
 type QuestionService struct {
 	QuestionRepository
@@ -38,4 +39,14 @@ func (es *QuestionService) GetQuestionById(id int) (*model.Question, error) {
 		return nil, err
 	}
 	return quest, nil
+}
+
+func (es *QuestionService) AddNewQeustion(questionDTO *model.QuestionDTO) (int, error) {
+	// Вызываем метод репозитория для получения случайного вопроса
+	id, err := es.QuestionRepository.AddQuestion(questionDTO)
+	if err != nil {
+		// Обработка ошибки здесь
+		return -1, err
+	}
+	return id, nil
 }

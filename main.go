@@ -38,16 +38,23 @@ func main() {
 	questionUsecase := questionUsecase.NewQuestionService(questionRepo)
 	randomQuestionHandler := questionHandler.NewGetRandomQuestionHandler("GET /question_random/", questionUsecase)
 	questionByIdHandler := questionHandler.NewGetQuestionByIdHandler("GET /question/{id}/", questionUsecase)
+	addQuestionHandler := questionHandler.NewAddQuestionHandler("POST /add_question/", questionUsecase)
 	httpServer.RegisterHandler(randomQuestionHandler)
 	httpServer.RegisterHandler(questionByIdHandler)
+	httpServer.RegisterHandler(addQuestionHandler)
 
 	authRepo := authRepo.NewAuthRepositoryMock()
 	authUsecase := authUsecase.NewAuthService(authRepo)
 	authHandler := authHandler.NewAuthHandler("POST /auth/", authUsecase)
+
 	httpServer.RegisterHandler(authHandler)
 	//как-то надо все роуты регать нормально, а не так вот...
 
-	//листен надо бы внутрь структуры сервер вставить с остановкой по контексту и сигналу хз
+	//todo защищенный эндпоинт на AddQuestion{category_id}
+	//юзкейс добавления вопроса
+	//защищенный хендлер добавления вопроса
+	//можно прям сделать логику мидлвары
+
 	httpServer.Start()
 	// Инициализация грациозного завершения работы
 	gracefulShutdown(logger)
