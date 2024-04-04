@@ -4,14 +4,13 @@ import (
 	"context"
 	"log"
 	"log/slog"
-	"net/http"
 	"os"
 	"os/signal"
 	database "pxgpool-crud-tests/internal/db"
 	"pxgpool-crud-tests/internal/logger"
 	repoQuestion "pxgpool-crud-tests/internal/repository/question"
 	"pxgpool-crud-tests/internal/server"
-	"pxgpool-crud-tests/internal/server/handlers"
+	handlerQuestion "pxgpool-crud-tests/internal/server/handler/question"
 	usecaseQuestion "pxgpool-crud-tests/internal/usecase/question"
 	"syscall"
 )
@@ -34,15 +33,15 @@ func main() {
 
 	questionRepo := repoQuestion.NewQuestionRepositoryPostgres(db)
 	questionUsecase := usecaseQuestion.NewQuestionService(questionRepo)
-	questionHandler := handlers.NewGetQuestionHandler(httpServer.Router, questionUsecase, logger)
+	randomQuestionHandler := handlerQuestion.NewGetRandomQuestionHandler("GET /question_random/", questionUsecase)
+	questionByIdHandler := handlerQuestion.NewGetQuestionByIdHandler("GET /question/{id}/", questionUsecase)
+	httpServer.RegisterHandler(randomQuestionHandler)
+	httpServer.RegisterHandler(questionByIdHandler)
 
-	httpServer.Router.HandleFunc("/question", questionHandler.ServeHTTP)
-	httpServer.Router.HandleFunc("GET /quest/", questionHandler.ServeHTTP)
-	httpServer.Router.HandleFunc("GET /path/", func(w http.ResponseWriter, r *http.Request) {
-		logger.Info("got path\n")
-	})
+	//как-то надо все роуты регать нормально, а не так вот...
 
-	go httpServer.Server.ListenAndServe()
+	//листен надо бы внутрь структуры сервер вставить с остановкой по контексту и сигналу хз
+	httpServer.Start()
 	// Инициализация грациозного завершения работы
 	gracefulShutdown(logger)
 }

@@ -1,0 +1,11 @@
+go list -f '{{.DefaultGODEBUG}}' pxgpool-crud-tests
+
+эта команда помогает увидеть httpmuxgo121, если он = 1 то
+новый мультиплексор от 1.22 не пашет
+
+вот так запускать тогда на одну сессию павершела
+$env:GODEBUG="httpmuxgo121=0"; go run main.go
+
+далее надо как-то по фулам изменить
+setx GODEBUG "httpmuxgo121=0"
+вот так поменялась 
