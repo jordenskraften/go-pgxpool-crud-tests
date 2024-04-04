@@ -23,6 +23,14 @@ func NewGetQuestionByIdHandler(patternUrl string, usecase *usecaseQuestion.Quest
 	return handler
 }
 
+func (gqh *GetQuestionByIdHandler) GetUrlPattern() string {
+	return gqh.PatternUrl
+}
+
+func (gqh *GetQuestionByIdHandler) GetHandler() func(http.ResponseWriter, *http.Request) {
+	return gqh.HttpHandler
+}
+
 func (gqh *GetQuestionByIdHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	idQuery := r.PathValue("id")
 
@@ -60,12 +68,4 @@ func (gqh *GetQuestionByIdHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(responseJSON) // Отправляем сериализованный JSON клиенту
-}
-
-func (gqh *GetQuestionByIdHandler) GetUrlPattern() string {
-	return gqh.PatternUrl
-}
-
-func (gqh *GetQuestionByIdHandler) GetHandler() func(http.ResponseWriter, *http.Request) {
-	return gqh.HttpHandler
 }

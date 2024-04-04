@@ -8,10 +8,13 @@ import (
 	"os/signal"
 	database "pxgpool-crud-tests/internal/db"
 	"pxgpool-crud-tests/internal/logger"
-	repoQuestion "pxgpool-crud-tests/internal/repository/question"
+	authRepo "pxgpool-crud-tests/internal/repository/auth"
+	questionRepo "pxgpool-crud-tests/internal/repository/question"
 	"pxgpool-crud-tests/internal/server"
-	handlerQuestion "pxgpool-crud-tests/internal/server/handler/question"
-	usecaseQuestion "pxgpool-crud-tests/internal/usecase/question"
+	authHandler "pxgpool-crud-tests/internal/server/handler/auth"
+	questionHandler "pxgpool-crud-tests/internal/server/handler/question"
+	authUsecase "pxgpool-crud-tests/internal/usecase/auth"
+	questionUsecase "pxgpool-crud-tests/internal/usecase/question"
 	"syscall"
 )
 
@@ -31,13 +34,17 @@ func main() {
 
 	httpServer := server.NewServer(logger)
 
-	questionRepo := repoQuestion.NewQuestionRepositoryPostgres(db)
-	questionUsecase := usecaseQuestion.NewQuestionService(questionRepo)
-	randomQuestionHandler := handlerQuestion.NewGetRandomQuestionHandler("GET /question_random/", questionUsecase)
-	questionByIdHandler := handlerQuestion.NewGetQuestionByIdHandler("GET /question/{id}/", questionUsecase)
+	questionRepo := questionRepo.NewQuestionRepositoryPostgres(db)
+	questionUsecase := questionUsecase.NewQuestionService(questionRepo)
+	randomQuestionHandler := questionHandler.NewGetRandomQuestionHandler("GET /question_random/", questionUsecase)
+	questionByIdHandler := questionHandler.NewGetQuestionByIdHandler("GET /question/{id}/", questionUsecase)
 	httpServer.RegisterHandler(randomQuestionHandler)
 	httpServer.RegisterHandler(questionByIdHandler)
 
+	authRepo := authRepo.NewAuthRepositoryMock()
+	authUsecase := authUsecase.NewAuthService(authRepo)
+	authHandler := authHandler.NewAuthHandler("POST /auth/", authUsecase)
+	httpServer.RegisterHandler(authHandler)
 	//как-то надо все роуты регать нормально, а не так вот...
 
 	//листен надо бы внутрь структуры сервер вставить с остановкой по контексту и сигналу хз

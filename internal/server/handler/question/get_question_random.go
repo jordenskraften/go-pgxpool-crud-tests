@@ -23,6 +23,14 @@ func NewGetRandomQuestionHandler(patternUrl string, usecase *usecaseQuestion.Que
 	return handler
 }
 
+func (gqh *GetRandomQuestionHandler) GetUrlPattern() string {
+	return gqh.PatternUrl
+}
+
+func (gqh *GetRandomQuestionHandler) GetHandler() func(http.ResponseWriter, *http.Request) {
+	return gqh.HttpHandler
+}
+
 // когда структура удовлетворяет интерфейсу Handler реализуя ServeHTTP
 // её можно кидать в хендлеры мультиплексора
 func (gqh *GetRandomQuestionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -52,12 +60,4 @@ func (gqh *GetRandomQuestionHandler) ServeHTTP(w http.ResponseWriter, r *http.Re
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(responseJSON) // Отправляем сериализованный JSON клиенту
-}
-
-func (gqh *GetRandomQuestionHandler) GetUrlPattern() string {
-	return gqh.PatternUrl
-}
-
-func (gqh *GetRandomQuestionHandler) GetHandler() func(http.ResponseWriter, *http.Request) {
-	return gqh.HttpHandler
 }
