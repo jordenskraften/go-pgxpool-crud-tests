@@ -4,19 +4,29 @@ import (
 	"context"
 	"log"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	database "pxgpool-crud-tests/internal/db"
 	"pxgpool-crud-tests/internal/logger"
-	authRepo "pxgpool-crud-tests/internal/repository/auth"
-	questionRepo "pxgpool-crud-tests/internal/repository/question"
+	"pxgpool-crud-tests/internal/repository"
 	"pxgpool-crud-tests/internal/server"
-	authHandler "pxgpool-crud-tests/internal/server/handler/auth"
-	questionHandler "pxgpool-crud-tests/internal/server/handler/question"
-	authUsecase "pxgpool-crud-tests/internal/usecase/auth"
-	questionUsecase "pxgpool-crud-tests/internal/usecase/question"
+	"pxgpool-crud-tests/internal/usecase"
 	"syscall"
 )
+
+func AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("auth_token")
+		if err != nil || cookie.Value == "" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		// Продолжаем выполнение следующего обработчика
+		next.ServeHTTP(w, r)
+	})
+}
 
 func main() {
 	logger := logger.NewLogger()
@@ -32,29 +42,9 @@ func main() {
 	}
 	defer db.Pool.Close()
 
-	httpServer := server.NewServer(logger)
-
-	questionRepo := questionRepo.NewQuestionRepositoryPostgres(db)
-	questionUsecase := questionUsecase.NewQuestionService(questionRepo)
-	randomQuestionHandler := questionHandler.NewGetRandomQuestionHandler("GET /question_random/", questionUsecase)
-	questionByIdHandler := questionHandler.NewGetQuestionByIdHandler("GET /question/{id}/", questionUsecase)
-	addQuestionHandler := questionHandler.NewAddQuestionHandler("POST /add_question/", questionUsecase)
-	httpServer.RegisterHandler(randomQuestionHandler)
-	httpServer.RegisterHandler(questionByIdHandler)
-	httpServer.RegisterHandler(addQuestionHandler)
-
-	authRepo := authRepo.NewAuthRepositoryMock()
-	authUsecase := authUsecase.NewAuthService(authRepo)
-	authHandler := authHandler.NewAuthHandler("POST /auth/", authUsecase)
-
-	httpServer.RegisterHandler(authHandler)
-	//как-то надо все роуты регать нормально, а не так вот...
-
-	//todo защищенный эндпоинт на AddQuestion{category_id}
-	//юзкейс добавления вопроса
-	//защищенный хендлер добавления вопроса
-	//можно прям сделать логику мидлвары
-
+	repoCommon := repository.NewRepository(db)
+	usecaseCommon := usecase.NewUsecase(repoCommon)
+	httpServer := server.NewServer(usecaseCommon, logger)
 	httpServer.Start()
 	// Инициализация грациозного завершения работы
 	gracefulShutdown(logger)

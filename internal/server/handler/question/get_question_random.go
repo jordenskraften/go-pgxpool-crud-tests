@@ -2,19 +2,18 @@ package question
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	usecaseQuestion "pxgpool-crud-tests/internal/usecase/question"
 )
 
 type GetRandomQuestionHandler struct {
-	PatternUrl  string
 	usecase     *usecaseQuestion.QuestionService
 	HttpHandler func(w http.ResponseWriter, r *http.Request)
 }
 
-func NewGetRandomQuestionHandler(patternUrl string, usecase *usecaseQuestion.QuestionService) *GetRandomQuestionHandler {
+func NewGetRandomQuestionHandler(usecase *usecaseQuestion.QuestionService) *GetRandomQuestionHandler {
 	handler := &GetRandomQuestionHandler{
-		PatternUrl:  patternUrl,
 		usecase:     usecase,
 		HttpHandler: nil,
 	}
@@ -24,7 +23,7 @@ func NewGetRandomQuestionHandler(patternUrl string, usecase *usecaseQuestion.Que
 }
 
 func (gqh *GetRandomQuestionHandler) GetUrlPattern() string {
-	return gqh.PatternUrl
+	return ""
 }
 
 func (gqh *GetRandomQuestionHandler) GetHandler() func(http.ResponseWriter, *http.Request) {
@@ -34,6 +33,7 @@ func (gqh *GetRandomQuestionHandler) GetHandler() func(http.ResponseWriter, *htt
 // когда структура удовлетворяет интерфейсу Handler реализуя ServeHTTP
 // её можно кидать в хендлеры мультиплексора
 func (gqh *GetRandomQuestionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Printf("GetRandomQuestionHandler")
 	quest, err := gqh.usecase.GetRandomQuestion()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

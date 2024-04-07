@@ -2,20 +2,21 @@ package question
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	usecaseQuestion "pxgpool-crud-tests/internal/usecase/question"
 	"strconv"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type GetQuestionByIdHandler struct {
-	PatternUrl  string
 	usecase     *usecaseQuestion.QuestionService
 	HttpHandler func(w http.ResponseWriter, r *http.Request)
 }
 
-func NewGetQuestionByIdHandler(patternUrl string, usecase *usecaseQuestion.QuestionService) *GetQuestionByIdHandler {
+func NewGetQuestionByIdHandler(usecase *usecaseQuestion.QuestionService) *GetQuestionByIdHandler {
 	handler := &GetQuestionByIdHandler{
-		PatternUrl:  patternUrl,
 		usecase:     usecase,
 		HttpHandler: nil,
 	}
@@ -24,7 +25,7 @@ func NewGetQuestionByIdHandler(patternUrl string, usecase *usecaseQuestion.Quest
 }
 
 func (gqh *GetQuestionByIdHandler) GetUrlPattern() string {
-	return gqh.PatternUrl
+	return ""
 }
 
 func (gqh *GetQuestionByIdHandler) GetHandler() func(http.ResponseWriter, *http.Request) {
@@ -32,8 +33,10 @@ func (gqh *GetQuestionByIdHandler) GetHandler() func(http.ResponseWriter, *http.
 }
 
 func (gqh *GetQuestionByIdHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	idQuery := r.PathValue("id")
+	//idQuery := r.PathValue("id")
 
+	idQuery := chi.URLParam(r, "id") //chi.URLParam(r, "id") //
+	log.Printf(idQuery)
 	// Преобразование строки в int
 	id, err := strconv.Atoi(idQuery)
 	if err != nil {
