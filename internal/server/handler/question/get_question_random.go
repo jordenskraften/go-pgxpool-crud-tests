@@ -2,7 +2,6 @@ package question
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	usecaseQuestion "pxgpool-crud-tests/internal/usecase/question"
 )
@@ -33,7 +32,6 @@ func (gqh *GetRandomQuestionHandler) GetHandler() func(http.ResponseWriter, *htt
 // когда структура удовлетворяет интерфейсу Handler реализуя ServeHTTP
 // её можно кидать в хендлеры мультиплексора
 func (gqh *GetRandomQuestionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Printf("GetRandomQuestionHandler")
 	quest, err := gqh.usecase.GetRandomQuestion()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

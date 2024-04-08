@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"log/slog"
-	"net/http"
 	"os"
 	"os/signal"
 	database "pxgpool-crud-tests/internal/db"
@@ -14,19 +13,6 @@ import (
 	"pxgpool-crud-tests/internal/usecase"
 	"syscall"
 )
-
-func AuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("auth_token")
-		if err != nil || cookie.Value == "" {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		// Продолжаем выполнение следующего обработчика
-		next.ServeHTTP(w, r)
-	})
-}
 
 func main() {
 	logger := logger.NewLogger()

@@ -2,7 +2,6 @@ package question
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	usecaseQuestion "pxgpool-crud-tests/internal/usecase/question"
 	"strconv"
@@ -36,7 +35,6 @@ func (gqh *GetQuestionByIdHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	//idQuery := r.PathValue("id")
 
 	idQuery := chi.URLParam(r, "id") //chi.URLParam(r, "id") //
-	log.Printf(idQuery)
 	// Преобразование строки в int
 	id, err := strconv.Atoi(idQuery)
 	if err != nil {

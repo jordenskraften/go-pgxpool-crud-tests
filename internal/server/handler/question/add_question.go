@@ -9,14 +9,12 @@ import (
 )
 
 type AddQuestionHandler struct {
-	PatternUrl  string
 	usecase     *usecaseQuestion.QuestionService
 	HttpHandler func(w http.ResponseWriter, r *http.Request)
 }
 
-func NewAddQuestionHandler(patternUrl string, usecase *usecaseQuestion.QuestionService) *AddQuestionHandler {
+func NewAddQuestionHandler(usecase *usecaseQuestion.QuestionService) *AddQuestionHandler {
 	handler := &AddQuestionHandler{
-		PatternUrl:  patternUrl,
 		usecase:     usecase,
 		HttpHandler: nil,
 	}
@@ -25,7 +23,7 @@ func NewAddQuestionHandler(patternUrl string, usecase *usecaseQuestion.QuestionS
 }
 
 func (aqh *AddQuestionHandler) GetUrlPattern() string {
-	return aqh.PatternUrl
+	return ""
 }
 
 func (aqh *AddQuestionHandler) GetHandler() func(http.ResponseWriter, *http.Request) {

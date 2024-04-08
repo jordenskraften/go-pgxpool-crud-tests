@@ -1,11 +1,12 @@
 package server
 
 import (
-	"net/http"
 	"pxgpool-crud-tests/internal/server/handler/question"
+	"pxgpool-crud-tests/internal/server/middleware"
 	"pxgpool-crud-tests/internal/usecase"
 
 	"github.com/go-chi/chi/v5"
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
 func NewRouter(usecase *usecase.Usecase) chi.Router {
@@ -14,28 +15,27 @@ func NewRouter(usecase *usecase.Usecase) chi.Router {
 	return r
 }
 
-func InitRouter(usecase *usecase.Usecase, router chi.Router) {
-	//тут нарн буду инициализировать роуты все
+func InitRouter(usecase *usecase.Usecase, r chi.Router) {
 	questionRandomHandler := question.NewGetRandomQuestionHandler(&usecase.QuestionService)
 	questionByIdHandler := question.NewGetQuestionByIdHandler(&usecase.QuestionService)
+	addQustionHandler := question.NewAddQuestionHandler(&usecase.QuestionService)
 
-	router.Group(func(r chi.Router) {
-		r.Use(SetupHeaders)
+	//публичные
+
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.SetupHeaders)
+		r.Use(chiMiddleware.StripSlashes) // Добавить StripSlashes здесь
+		r.Get("/question_random", questionRandomHandler.ServeHTTP)
 		r.Get("/question_random/", questionRandomHandler.ServeHTTP)
+		r.Get("/question/{id}", questionByIdHandler.ServeHTTP)
 		r.Get("/question/{id}/", questionByIdHandler.ServeHTTP)
 	})
-}
 
-func SetupHeaders(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "*")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-		if r.Method == http.MethodOptions {
-			return
-		}
-
-		next.ServeHTTP(w, r)
+	//приватные
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.SetupHeaders)
+		r.Use(middleware.AuthMiddleware)
+		r.Post("/add_question", addQustionHandler.ServeHTTP)
+		r.Post("/add_question/", addQustionHandler.ServeHTTP)
 	})
 }
